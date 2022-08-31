@@ -113,29 +113,22 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
 
             try {
                 //1wKzhmG5497Fo8Gj7wmxF2cKR2wbUtDwD9a6EFCSuxRouEnJX9gZQj4sG9tVBNohxEas6cEpztDrj9Z1bX3eVmV(수연 prv)
-                const prvKey ="4vzAo8fP9k5P6HbgES94MgmEwq82GuTd3GfGW3NfN6zZn26qBijyB6R8Qoou2jQj1HZbMc8EycPr9mJjErBpcPgF";
-                const payer = Keypair.fromSecretKey(bs58.decode(prvKey)); // 내 지갑으로 대납
-                let transactionBuffer =  transaction.serializeMessage(); // string 으로 변경 bs58TxStr가 출력
+                //const prvKey ="4vzAo8fP9k5P6HbgES94MgmEwq82GuTd3GfGW3NfN6zZn26qBijyB6R8Qoou2jQj1HZbMc8EycPr9mJjErBpcPgF";
+                //const payer = Keypair.fromSecretKey(bs58.decode(prvKey)); // 내 지갑으로 대납
+                let transactionBuffer =  transaction.serializeMessage(); // 메시지 자체를 (bytes)로 바꿈 == serializ
                 
-                let bs58TxStr = bs58.encode(transactionBuffer);
+                let bs58TxStr = bs58.encode(transactionBuffer); // 메시지 해시값 string 변경 > 체리 전송
                 console.log("TR STRING BUFFER : ",bs58TxStr);
-
-                let testsignature = sign.detached(transactionBuffer, payer.secretKey); 
-                let testsignedSigOrgStr = bs58.encode(testsignature); 
-                //console.log('testsignature==', testsignature);
-                console.log('testsignedSigOrgStr==', testsignedSigOrgStr);
                 
                 let signature: string;
-                //let signature = nacl.sign.detached(transactionBuffer,payer.secretKey); 
-                //(*) 이부분이 서버쪽에서 받아오는 값으로 변경됨 > decode 해서 addSignature
-                // detached 안에 두가지. 1. 메시지를 해시. 해시값과 퍼블릭키를 합친 것을 프라이빗키로 암호화함 . sign한 암호화된 문장만 넘김 
                 await fetch('http://localhost:8080/public/metaplex/cherrySignTest', {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        bs58TxStr: bs58TxStr
+                        bs58TxStr: bs58TxStr,
+                        userSn: "1000000000000001842"
                     }),
                 })
                 .then((res) => res.json())
@@ -145,23 +138,19 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
                         console.log('post서버에서 받은 데이터(뷰)==', data);
                         console.log('post(뷰)==', data.data);
 
-                        signature = data.data;
+                        signature = data.data.signedSig;
                         console.log('signature 주입 후==', signature);
                         let signedSigOrgStr = bs58.decode(signature); // 해석하면 퍼블릭키와 해시값을 도출할수있음 
                         console.log("SIGNED SINATURE : ",signedSigOrgStr);
-                        
-                        console.log("payer.publicKey:",payer.publicKey.toBase58());
 
-                        transaction.addSignature(payer.publicKey, new Buffer(signedSigOrgStr));
+                        transaction.addSignature(this._publicKey as PublicKey, new Buffer(signedSigOrgStr));
                         let isVerifiedSignature = transaction.verifySignatures();
                         console.log("isVerifiedSignature:",isVerifiedSignature);
-                        
+                        console.log("===transaction:",transaction);
                         return transaction;
                     }
-                    
                 })
                 .catch(err => {console.log(err)});
-                
             } catch (error: any) {
                 throw new WalletSignTransactionError(error?.message, error);
             }
@@ -174,9 +163,7 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
         
     }
 
-    async signAllTransaction(
-        transactions: Transaction[],
-    ): Promise<Transaction[]> {
+    async signAllTransaction(transactions: Transaction[]): Promise<Transaction[]> {
         console.log('[signAllTransactions]transactions==', transactions);
         
         let signature: Uint8Array | string[];

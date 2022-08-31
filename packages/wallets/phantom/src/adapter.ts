@@ -133,6 +133,8 @@ export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter {
 
             this._wallet = wallet;
             this._publicKey = publicKey;
+            console.log("[connect]this._wallet==", this._wallet);
+            console.log("[connect]this._publicKey==", this._publicKey);
 
             this.emit('connect', publicKey);
         } catch (error: any) {
@@ -151,6 +153,8 @@ export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter {
 
             this._wallet = null;
             this._publicKey = null;
+            console.log("[disconnect]this._wallet==", this._wallet);
+            console.log("[disconnect]this._publicKey==", this._publicKey);
 
             try {
                 await wallet.disconnect();
@@ -172,6 +176,9 @@ export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter {
             if (!wallet) throw new WalletNotConnectedError();
 
             try {
+                console.log("transaction==", transaction);
+                console.log("connection==", connection);
+                console.log("options==", options);
                 const { signers, ...sendOptions } = options;
 
                 transaction = await this.prepareTransaction(transaction, connection, sendOptions);
@@ -181,6 +188,13 @@ export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter {
                 sendOptions.preflightCommitment = sendOptions.preflightCommitment || connection.commitment;
 
                 const { signature } = await wallet.signAndSendTransaction(transaction, sendOptions);
+                console.log("[리턴전]transaction==", transaction);
+                console.log("[리턴전]connection==", connection);
+                console.log("[리턴전]options==", options);
+                console.log('[signTransaction 진입][0]toBuffer==', transaction.signatures[0].publicKey.toBase58().toString());
+                console.log('[signTransaction 진입][0]toBase58==', transaction.signatures[0].publicKey);
+                console.log('[signTransaction 진입][1]toBuffer==', transaction.signatures[1].publicKey.toBase58().toString());
+                console.log('[signTransaction 진입][1]toBase58==', transaction.signatures[1].publicKey);
                 return signature;
             } catch (error: any) {
                 if (error instanceof WalletError) throw error;
@@ -198,6 +212,14 @@ export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter {
             if (!wallet) throw new WalletNotConnectedError();
 
             try {
+                console.log("[리턴전signTransaction]transaction==", transaction);
+                console.log("[리턴전signTransaction]wallet==", wallet);
+                //console.log("[리턴전signTransaction]options==", options);
+                console.log('[signTransaction 진입][0]toBuffer==', transaction.signatures[0].publicKey.toBase58().toString());
+                console.log('[signTransaction 진입][0]toBase58==', transaction.signatures[0].publicKey);
+                console.log('[signTransaction 진입][1]toBuffer==', transaction.signatures[1].publicKey.toBase58().toString());
+                console.log('[signTransaction 진입][1]toBase58==', transaction.signatures[1].publicKey);
+                
                 return (await wallet.signTransaction(transaction)) || transaction;
             } catch (error: any) {
                 throw new WalletSignTransactionError(error?.message, error);
@@ -214,6 +236,8 @@ export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter {
             if (!wallet) throw new WalletNotConnectedError();
 
             try {
+                console.log("[리턴전signAllTransactions]transaction==", transactions);
+                console.log("[리턴전signAllTransactions]wallet==", wallet);
                 return (await wallet.signAllTransactions(transactions)) || transactions;
             } catch (error: any) {
                 throw new WalletSignTransactionError(error?.message, error);
@@ -231,6 +255,9 @@ export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter {
 
             try {
                 const { signature } = await wallet.signMessage(message);
+                console.log("[리턴전signMessage]message==", message);
+                console.log("[리턴전signMessage]wallet==", wallet);
+                console.log("[리턴전signMessage]signature==", signature);
                 return signature;
             } catch (error: any) {
                 throw new WalletSignMessageError(error?.message, error);

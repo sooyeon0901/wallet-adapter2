@@ -43,6 +43,7 @@
         "@solana/wallet-adapter-coinbase": "workspace:^",
         "@solana/wallet-adapter-coinhub": "workspace:^",
         "@solana/wallet-adapter-exodus": "workspace:^",
+        "@solana/wallet-adapter-cherry": "workspace:^",
         "@solana/wallet-adapter-fake": "workspace:^",
         "@solana/wallet-adapter-glow": "workspace:^",
         "@solana/wallet-adapter-huobi": "workspace:^",

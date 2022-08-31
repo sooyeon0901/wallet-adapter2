@@ -47,6 +47,9 @@
             "path": "../brave/tsconfig.all.json"
         },
         {
+            "path": "../cherry/tsconfig.all.json"
+        },
+        {
             "path": "../coin98/tsconfig.all.json"
         },
         {

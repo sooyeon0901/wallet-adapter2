@@ -67,7 +67,7 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
             //     window.open("http://192.168.10.207:8080/public/metaplex/walletAdres", "_blank");
             //     //return
             // };
-            window.open("http://192.168.10.207:8080/public/metaplex/walletAdres", "_blank");
+            window.open("http://192.168.10.207:8080/public/metaplex/walletAdres", "_blank", "width=600, height=600, left=700, top=300");
             async function cherryReceivePage(e: any) {
                 console.log('=e ==', e);
                 if (e.origin == "http://localhost:8080" || e.origin == "http://192.168.10.207:8080") {

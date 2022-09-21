@@ -1,18 +1,13 @@
-import { EventEmitter, scopePollingDetectionStrategy, SendTransactionOptions, WalletAccountError, WalletError, WalletName, WalletNotConnectedError, WalletPublicKeyError, WalletSendTransactionError, WalletSignTransactionError } from '@solana/wallet-adapter-base';
+import { SendTransactionOptions, WalletAccountError, WalletName, WalletNotConnectedError, WalletPublicKeyError, WalletSignTransactionError } from '@solana/wallet-adapter-base';
 import { BaseWalletAdapter, WalletReadyState } from '@solana/wallet-adapter-base';
-import { clusterApiUrl, Connection, SendOptions, Transaction, TransactionSignature } from '@solana/web3.js';
-import { PublicKey, Signer, Keypair } from '@solana/web3.js';
+import { Connection, Transaction, TransactionSignature } from '@solana/web3.js';
+import { PublicKey, Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { Sign, timingSafeEqual } from 'crypto';
-import { SignatureKind } from 'typescript';
 import { sign } from 'tweetnacl';
 
 export const CherryWalletName = 'Cherry Wallet' as WalletName<'Cherry Wallet'>;
 
 
-// const cherryReceivePage = (e: any) => {
-//     return console.log('e======', e);
-// }
 export class CherryWalletAdapter extends BaseWalletAdapter {
     private _publicKey!: PublicKey | null;
     protected _connecting!: boolean;
@@ -26,15 +21,6 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
 
     constructor() {
         super();
-        //this._autoApprove = true;
-        // scopePollingDetectionStrategy(() => {
-        //     if (this._connecting) {
-        //         this._readyState = WalletReadyState.Installed;
-        //         this.emit('readyStateChange', this._readyState);
-        //         return true;
-        //     }
-        //     return false;
-        // });
     }
 
     get connecting() {
@@ -57,21 +43,23 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
     
 
     async connect(): Promise<void> {
+        var _width = 500;
+        var _height = 700;
+        var _left = Math.round(window.screenX + (window.outerWidth/2) - (_width/2));
+        var _top = Math.round(window.screenY + (window.outerHeight/2) - (_height/2));
+
         try {
             console.log('connect 진입');
             var cherryAdres : string = "";
             this._connecting = true;
             
             if (this.connected || this.connecting) { return };
-            // if (! this._publicKey) { 
-            //     window.open("http://192.168.10.207:8080/public/metaplex/walletAdres", "_blank");
-            //     //return
-            // };
-            window.open("http://192.168.10.207:8080/public/metaplex/walletAdres", "_blank", "width=600, height=600, left=700, top=300");
+
+            window.open("http://192.168.10.207:8080/public/metaplex/walletAdres", "_blank", 
+            "width=" + _width + ", height=" + _height + ", left=" + _left + ", top=" + _top + ", scrollbars=no, location=no");
+
             async function cherryReceivePage(e: any) {
-                console.log('=e ==', e);
                 if (e.origin == "http://localhost:8080" || e.origin == "http://192.168.10.207:8080") {
-                    console.log('==========================================================================');
                     console.log('e======', e);
                     console.log('e.data======', e.data.publicKey);
                     
@@ -79,14 +67,13 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
                 }
             }
             window.addEventListener('message', async (e) => {
-                console.log('이벤트 리스너 확인');
                 let buffer: Buffer;
                 let cherryAdres = await cherryReceivePage(e)
                 console.log('cherryAdres==', cherryAdres);
+
                 if(cherryAdres) {
                     try {
                         buffer = new PublicKey(cherryAdres).toBuffer(); 
-                        console.log('buffer==', buffer);
                     } catch (error: any) {
                         throw new WalletAccountError(error?.message, error);
                     }
@@ -94,7 +81,6 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
                     let publicKey: PublicKey;
                     try {
                         publicKey = new PublicKey(buffer);
-                        console.log('publicKey==', publicKey);
                     } catch (error: any) {
                         throw new WalletPublicKeyError(error?.message, error);
                     }
@@ -131,60 +117,63 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
     }
 
 
-    async signTransaction(transaction: Transaction): Promise<Transaction> {
+    async signTransaction(transaction: Transaction): Promise < Transaction > {
         try {
             if (!this._publicKey) throw new WalletNotConnectedError();
-
+    
             try {
                 //1wKzhmG5497Fo8Gj7wmxF2cKR2wbUtDwD9a6EFCSuxRouEnJX9gZQj4sG9tVBNohxEas6cEpztDrj9Z1bX3eVmV(수연 prv)
                 //const prvKey ="4vzAo8fP9k5P6HbgES94MgmEwq82GuTd3GfGW3NfN6zZn26qBijyB6R8Qoou2jQj1HZbMc8EycPr9mJjErBpcPgF";
                 //const payer = Keypair.fromSecretKey(bs58.decode(prvKey)); // 내 지갑으로 대납
-                let transactionBuffer =  transaction.serializeMessage(); // 메시지 자체를 (bytes)로 바꿈 == serializ
-                
+                let transactionBuffer = transaction.serializeMessage(); // 메시지 자체를 (bytes)로 바꿈 == serializ
+    
                 let bs58TxStr = bs58.encode(transactionBuffer); // 메시지 해시값 string 변경 > 체리 전송
-                console.log("TR STRING BUFFER : ",bs58TxStr);
-                
+                console.log("TR STRING BUFFER : ", bs58TxStr);
+    
                 let signature: string;
                 await fetch('http://localhost:8080/public/metaplex/cherrySignTest', {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        bs58TxStr: bs58TxStr,
-                        userSn: "1000000000000001842"
-                    }),
-                })
-                .then((res) => res.json())
-                .then((data) => {
-                    if(data != 'undefined' && data != null){ // 랜더링 시 undefined 나오는거 해결 위함?
-                        console.log('post/stringify서버에서 받은 데이터(뷰)==', JSON.stringify(data));
-                        console.log('post서버에서 받은 데이터(뷰)==', data);
-                        console.log('post(뷰)==', data.data);
-
-                        signature = data.data.signedSig;
-                        console.log('signature 주입 후==', signature);
-                        let signedSigOrgStr = bs58.decode(signature); // 해석하면 퍼블릭키와 해시값을 도출할수있음 
-                        console.log("SIGNED SINATURE : ",signedSigOrgStr);
-
-                        transaction.addSignature(this._publicKey as PublicKey, new Buffer(signedSigOrgStr));
-                        let isVerifiedSignature = transaction.verifySignatures();
-                        console.log("isVerifiedSignature:",isVerifiedSignature);
-                        console.log("===transaction:",transaction);
-                        return transaction;
-                    }
-                })
-                .catch(err => {console.log(err)});
+                        method: "POST",
+                        //mode: "no-cors",//
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            bs58TxStr: bs58TxStr,
+                            userSn: "1000000000000001842" //(todo)
+                        }),
+                    })
+                    .then((res) => res.json())
+                    .then((data) => {
+                        if (data != 'undefined' && data != null) { // 랜더링 시 undefined 나오는거 해결 위함?
+                            console.log('post/stringify서버에서 받은 데이터(뷰)==', JSON.stringify(data));
+                            console.log('post서버에서 받은 데이터(뷰)==', data);
+                            console.log('post(뷰)==', data.data);
+    
+                            signature = data.data.signedSig;
+                            console.log('signature 주입 후==', signature);
+                            let signedSigOrgStr = bs58.decode(signature); // 해석하면 퍼블릭키와 해시값을 도출할수있음 
+                            console.log("SIGNED SINATURE : ", signedSigOrgStr);
+    
+                            transaction.addSignature(this._publicKey as PublicKey, new Buffer(signedSigOrgStr));
+                            let isVerifiedSignature = transaction.verifySignatures();
+                            console.log("isVerifiedSignature:", isVerifiedSignature);
+                            console.log("===transaction:", transaction);
+                            return transaction;
+                        }
+                    })
+                    .catch(err => {
+                        console.log(err)
+                    });
             } catch (error: any) {
                 throw new WalletSignTransactionError(error?.message, error);
             }
         } catch (error: any) {
             this.emit('error', error);
             throw error;
-        } 
-        
+        }
+    
         return transaction;
-        
+    
     }
 
     async signAllTransaction(transactions: Transaction[]): Promise<Transaction[]> {

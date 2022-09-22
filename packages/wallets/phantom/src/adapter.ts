@@ -181,7 +181,8 @@ export class PhantomWalletAdapter extends BaseMessageSignerWalletAdapter {
                 console.log("options==", options);
                 const { signers, ...sendOptions } = options;
 
-                transaction = await this.prepareTransaction(transaction, connection, sendOptions);
+                //transaction = await this.prepareTransaction(transaction, connection, sendOptions); //0920 sendOptions 에러 삭제 전
+                transaction = await this.prepareTransaction(transaction, connection);
 
                 signers?.length && transaction.partialSign(...signers);
 

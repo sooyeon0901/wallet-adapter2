@@ -7,11 +7,13 @@ import { sign } from 'tweetnacl';
 
 export const CherryWalletName = 'Cherry Wallet' as WalletName<'Cherry Wallet'>;
 
-
+ //(*1) URL : 체리 로컬/개발/QA/운영 체크 필요
 export class CherryWalletAdapter extends BaseWalletAdapter {
     private _publicKey!: PublicKey | null;
     protected _connecting!: boolean;
     private _connected!: boolean;
+    private _feePayer?: string;
+    private _userSn?: number;
     //private _autoApprove = false;
 
     name = CherryWalletName;
@@ -40,8 +42,6 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
         return this._connected;
     }
 
-    
-
     async connect(): Promise<void> {
         var _width = 500;
         var _height = 700;
@@ -49,30 +49,37 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
         var _top = Math.round(window.screenY + (window.outerHeight/2) - (_height/2));
 
         try {
-            console.log('connect 진입');
             var cherryAdres : string = "";
             this._connecting = true;
             
             if (this.connected || this.connecting) { return };
-
-            window.open("http://192.168.10.207:8080/public/metaplex/walletAdres", "_blank", 
-            "width=" + _width + ", height=" + _height + ", left=" + _left + ", top=" + _top + ", scrollbars=no, location=no");
+            
+            window.open(process.env.NEXT_PUBLIC_CHERRY_LOGIN_LOCAL, "_blank", 
+            "width=" + _width + ", height=" + _height + ", left=" + _left + ", top=" + _top + ", scrollbars=no, location=no");  //(*1) URL
 
             async function cherryReceivePage(e: any) {
-                if (e.origin == "http://localhost:8080" || e.origin == "http://192.168.10.207:8080") {
+                if (e.origin == process.env.NEXT_PUBLIC_CHERRY_LOCAL) { //(*1) URL
                     console.log('e======', e);
-                    console.log('e.data======', e.data.publicKey);
-                    
-                    return e.data.publicKey;
+                    console.log('e.data======', e.data);
+
+                    return e.data;
                 }
             }
             window.addEventListener('message', async (e) => {
                 let buffer: Buffer;
-                let cherryAdres = await cherryReceivePage(e)
-                console.log('cherryAdres==', cherryAdres);
+                let cherryData = await cherryReceivePage(e);
+                console.log('cherryData==', cherryData);
 
-                if(cherryAdres) {
+                if(cherryData) {
                     try {
+                        cherryAdres = cherryData.publicKey;
+                        this._userSn = cherryData.userSn;
+                        this._feePayer = cherryData.feePayer;
+
+                        console.log('cherryAdres==', cherryAdres);
+                        console.log('this._userSn==', this._userSn);
+                        console.log('this._feePayer==', this._feePayer);
+
                         buffer = new PublicKey(cherryAdres).toBuffer(); 
                     } catch (error: any) {
                         throw new WalletAccountError(error?.message, error);
@@ -125,21 +132,19 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
                 //1wKzhmG5497Fo8Gj7wmxF2cKR2wbUtDwD9a6EFCSuxRouEnJX9gZQj4sG9tVBNohxEas6cEpztDrj9Z1bX3eVmV(수연 prv)
                 //const prvKey ="4vzAo8fP9k5P6HbgES94MgmEwq82GuTd3GfGW3NfN6zZn26qBijyB6R8Qoou2jQj1HZbMc8EycPr9mJjErBpcPgF";
                 //const payer = Keypair.fromSecretKey(bs58.decode(prvKey)); // 내 지갑으로 대납
-                let transactionBuffer = transaction.serializeMessage(); // 메시지 자체를 (bytes)로 바꿈 == serializ
-    
+                let transactionBuffer = transaction.serializeMessage(); // 메시지 자체를 (bytes)로 바꿈 == serialize
+                let signature: string;
                 let bs58TxStr = bs58.encode(transactionBuffer); // 메시지 해시값 string 변경 > 체리 전송
                 console.log("TR STRING BUFFER : ", bs58TxStr);
-    
-                let signature: string;
-                await fetch('http://localhost:8080/public/metaplex/cherrySignTest', {
+
+                await fetch(process.env.NEXT_PUBLIC_CHERRY_SIGN_LOCAL as string, { //(*1) URL
                         method: "POST",
-                        //mode: "no-cors",//
                         headers: {
                             "Content-Type": "application/json",
                         },
                         body: JSON.stringify({
                             bs58TxStr: bs58TxStr,
-                            userSn: "1000000000000001842" //(todo)
+                            userSn: this._userSn
                         }),
                     })
                     .then((res) => res.json())
@@ -151,13 +156,16 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
     
                             signature = data.data.signedSig;
                             console.log('signature 주입 후==', signature);
+
                             let signedSigOrgStr = bs58.decode(signature); // 해석하면 퍼블릭키와 해시값을 도출할수있음 
                             console.log("SIGNED SINATURE : ", signedSigOrgStr);
     
                             transaction.addSignature(this._publicKey as PublicKey, new Buffer(signedSigOrgStr));
                             let isVerifiedSignature = transaction.verifySignatures();
+
                             console.log("isVerifiedSignature:", isVerifiedSignature);
                             console.log("===transaction:", transaction);
+
                             return transaction;
                         }
                     })

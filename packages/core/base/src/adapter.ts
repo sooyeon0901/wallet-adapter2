@@ -24,6 +24,7 @@ export interface WalletAdapterProps<Name extends string = string> {
     name: WalletName<Name>;
     url: string;
     icon: string;
+    feePayer?: string; //0920 feepayer 추가 : 체리에서 값 받아오기 
     readyState: WalletReadyState;
     publicKey: PublicKey | null;
     connecting: boolean;

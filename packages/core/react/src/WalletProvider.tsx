@@ -43,7 +43,8 @@ export const WalletProvider: FC<WalletProviderProps> = ({
     const isConnecting = useRef(false);
     const isDisconnecting = useRef(false);
     const isUnloading = useRef(false);
-
+    
+    console.log('wallet?.adapter.feePayer===', wallet?.adapter.feePayer);
     // Wrap adapters to conform to the `Wallet` interface
     const [wallets, setWallets] = useState(() =>
         adapters.map((adapter) => ({
@@ -182,7 +183,7 @@ export const WalletProvider: FC<WalletProviderProps> = ({
     const connect = useCallback(async () => {
         if (isConnecting.current || isDisconnecting.current || connected) return;
         if (!adapter) throw handleError(new WalletNotSelectedError());
-
+        console.log('wallet?.adapter.feePayer===', wallet?.adapter.feePayer);
         if (!(readyState === WalletReadyState.Installed || readyState === WalletReadyState.Loadable)) {
             // Clear the selected wallet
             setName(null);
@@ -234,6 +235,9 @@ export const WalletProvider: FC<WalletProviderProps> = ({
         async (transaction: Transaction, connection: Connection, options?: SendTransactionOptions) => {
             if (!adapter) throw handleError(new WalletNotSelectedError());
             if (!connected) throw handleError(new WalletNotConnectedError());
+
+            console.log('wallet?.adapter.feePayer===', wallet?.adapter.feePayer);
+
             return await adapter.sendTransaction(transaction, connection, options);
         },
         [adapter, handleError, connected]
@@ -245,6 +249,12 @@ export const WalletProvider: FC<WalletProviderProps> = ({
             adapter && 'signTransaction' in adapter
                 ? async (transaction: Transaction): Promise<Transaction> => {
                       if (!connected) throw handleError(new WalletNotConnectedError());
+
+                      // 민팅시 여기에 걸림 
+                      console.log('wallet?.adapter.feePayer===', wallet?.adapter.feePayer);
+                      //wallet.adapter.feePayer.toBase58()
+                    //'5oxjdPnZ62rSQjQc5Ay9HdpXei4H9N8Utp2CFYyeCtoq' : 결과값이 잘 찍힘.
+
                       return await adapter.signTransaction(transaction);
                   }
                 : undefined,

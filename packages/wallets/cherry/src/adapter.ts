@@ -9,10 +9,11 @@ export const CherryWalletName = 'Cherry Wallet' as WalletName<'Cherry Wallet'>;
 
  //(*1) URL : 체리 로컬/개발/QA/운영 체크 필요
 export class CherryWalletAdapter extends BaseWalletAdapter {
+    feePayer?: PublicKey | null | undefined;
     private _publicKey!: PublicKey | null;
     protected _connecting!: boolean;
     private _connected!: boolean;
-    private _feePayer?: string;
+    //private _feePayer?: string;
     private _userSn?: number;
     //private _autoApprove = false;
 
@@ -67,6 +68,7 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
             }
             window.addEventListener('message', async (e) => {
                 let buffer: Buffer;
+                let buffer2: Buffer;
                 let cherryData = await cherryReceivePage(e);
                 console.log('cherryData==', cherryData);
 
@@ -74,13 +76,16 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
                     try {
                         cherryAdres = cherryData.publicKey;
                         this._userSn = cherryData.userSn;
-                        this._feePayer = cherryData.feePayer;
+                        //this.feePayer = cherryData.feePayer;
 
                         console.log('cherryAdres==', cherryAdres);
                         console.log('this._userSn==', this._userSn);
-                        console.log('this._feePayer==', this._feePayer);
+                        //console.log('this._feePayer==', this.feePayer);
 
                         buffer = new PublicKey(cherryAdres).toBuffer(); 
+                        buffer2 = new PublicKey(cherryData.feePayer).toBuffer(); 
+                        console.log('buffer2==', buffer2);
+                        console.log('cherryData.feePayer==', cherryData.feePayer);
                     } catch (error: any) {
                         throw new WalletAccountError(error?.message, error);
                     }
@@ -88,6 +93,7 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
                     let publicKey: PublicKey;
                     try {
                         publicKey = new PublicKey(buffer);
+                        this.feePayer = new PublicKey(buffer2);
                     } catch (error: any) {
                         throw new WalletPublicKeyError(error?.message, error);
                     }

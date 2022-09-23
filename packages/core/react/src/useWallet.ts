@@ -22,6 +22,8 @@ export interface WalletContextState {
     connecting: boolean;
     connected: boolean;
     disconnecting: boolean;
+    //test
+    feePayer?: PublicKey;
 
     select(walletName: WalletName): void;
     connect(): Promise<void>;
@@ -81,6 +83,12 @@ Object.defineProperty(DEFAULT_CONTEXT, 'wallet', {
 Object.defineProperty(DEFAULT_CONTEXT, 'publicKey', {
     get() {
         console.error(constructMissingProviderErrorMessage('read', 'publicKey'));
+        return null;
+    },
+});
+Object.defineProperty(DEFAULT_CONTEXT, 'feePayer', {
+    get() {
+        console.error(constructMissingProviderErrorMessage('read', 'feePayer'));
         return null;
     },
 });

@@ -24,7 +24,7 @@ export interface WalletAdapterProps<Name extends string = string> {
     name: WalletName<Name>;
     url: string;
     icon: string;
-    feePayer?: string; //0920 feepayer 추가 : 체리에서 값 받아오기 
+    feePayer?: PublicKey | null; //0920 feepayer 추가 : 체리에서 값 받아오기 
     readyState: WalletReadyState;
     publicKey: PublicKey | null;
     connecting: boolean;
@@ -77,6 +77,7 @@ export abstract class BaseWalletAdapter extends EventEmitter<WalletAdapterEvents
     abstract readyState: WalletReadyState;
     abstract publicKey: PublicKey | null;
     abstract connecting: boolean;
+    abstract feePayer?: PublicKey | null; //test 0923
 
     get connected() {
         return !!this.publicKey;

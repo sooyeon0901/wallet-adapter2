@@ -60,8 +60,8 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
 
             async function cherryReceivePage(e: any) {
                 if (e.origin == process.env.NEXT_PUBLIC_CHERRY_LOCAL) { //(*1) URL
-                    console.log('e======', e);
-                    console.log('e.data======', e.data);
+                    console.log('[체리]e======', e);
+                    console.log('[체리]e.data======', e.data);
 
                     return e.data;
                 }
@@ -70,7 +70,7 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
                 let buffer: Buffer;
                 let buffer2: Buffer;
                 let cherryData = await cherryReceivePage(e);
-                console.log('cherryData==', cherryData);
+                console.log('[체리]cherryData==', cherryData);
 
                 if(cherryData) {
                     try {
@@ -78,14 +78,14 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
                         this._userSn = cherryData.userSn;
                         //this.feePayer = cherryData.feePayer;
 
-                        console.log('cherryAdres==', cherryAdres);
-                        console.log('this._userSn==', this._userSn);
+                        console.log('[체리]cherryAdres==', cherryAdres);
+                        console.log('[체리]this._userSn==', this._userSn);
                         //console.log('this._feePayer==', this.feePayer);
 
                         buffer = new PublicKey(cherryAdres).toBuffer(); 
                         buffer2 = new PublicKey(cherryData.feePayer).toBuffer(); 
-                        console.log('buffer2==', buffer2);
-                        console.log('cherryData.feePayer==', cherryData.feePayer);
+                        console.log('[체리]buffer2==', buffer2);
+                        console.log('[체리]cherryData.feePayer==', cherryData.feePayer);
                     } catch (error: any) {
                         throw new WalletAccountError(error?.message, error);
                     }
@@ -141,7 +141,7 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
                 let transactionBuffer = transaction.serializeMessage(); // 메시지 자체를 (bytes)로 바꿈 == serialize
                 let signature: string;
                 let bs58TxStr = bs58.encode(transactionBuffer); // 메시지 해시값 string 변경 > 체리 전송
-                console.log("TR STRING BUFFER : ", bs58TxStr);
+                console.log("[체리]TR STRING BUFFER : ", bs58TxStr);
 
                 await fetch(process.env.NEXT_PUBLIC_CHERRY_SIGN_LOCAL as string, { //(*1) URL
                         method: "POST",
@@ -156,21 +156,21 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
                     .then((res) => res.json())
                     .then((data) => {
                         if (data != 'undefined' && data != null) { // 랜더링 시 undefined 나오는거 해결 위함?
-                            console.log('post/stringify서버에서 받은 데이터(뷰)==', JSON.stringify(data));
-                            console.log('post서버에서 받은 데이터(뷰)==', data);
-                            console.log('post(뷰)==', data.data);
+                            console.log('[체리]post/stringify서버에서 받은 데이터(뷰)==', JSON.stringify(data));
+                            console.log('[체리]post서버에서 받은 데이터(뷰)==', data);
+                            console.log('[체리]post(뷰)==', data.data);
     
                             signature = data.data.signedSig;
-                            console.log('signature 주입 후==', signature);
+                            console.log('[체리]signature 주입 후==', signature);
 
                             let signedSigOrgStr = bs58.decode(signature); // 해석하면 퍼블릭키와 해시값을 도출할수있음 
-                            console.log("SIGNED SINATURE : ", signedSigOrgStr);
+                            console.log("[체리]SIGNED SINATURE : ", signedSigOrgStr);
     
                             transaction.addSignature(this._publicKey as PublicKey, new Buffer(signedSigOrgStr));
                             let isVerifiedSignature = transaction.verifySignatures();
 
-                            console.log("isVerifiedSignature:", isVerifiedSignature);
-                            console.log("===transaction:", transaction);
+                            console.log("[체리]isVerifiedSignature:", isVerifiedSignature);
+                            console.log("[체리]===transaction:", transaction);
 
                             return transaction;
                         }
@@ -191,7 +191,7 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
     }
 
     async signAllTransaction(transactions: Transaction[]): Promise<Transaction[]> {
-        console.log('[signAllTransactions]transactions==', transactions);
+        console.log('[체리][signAllTransactions]transactions==', transactions);
         
         let signature: Uint8Array | string[];
         const a =
@@ -203,8 +203,8 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
         
         transactions = transactions.map((tx, idx) => {
             tx.addSignature(a.publicKey, signatures[idx]);
-            console.log('[signAllTransactions]tx==', tx);
-            console.log('[signAllTransactions]tx.verifySignatures()==', tx.verifySignatures());
+            console.log('[체리][signAllTransactions]tx==', tx);
+            console.log('[체리][signAllTransactions]tx.verifySignatures()==', tx.verifySignatures());
             return tx;
         })
 

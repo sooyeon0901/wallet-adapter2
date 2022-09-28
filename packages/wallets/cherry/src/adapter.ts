@@ -9,7 +9,7 @@ export const CherryWalletName = 'Cherry Wallet' as WalletName<'Cherry Wallet'>;
 
  //(*1) URL : 체리 로컬/개발/QA/운영 체크 필요
 export class CherryWalletAdapter extends BaseWalletAdapter {
-    feePayer?: PublicKey | null | undefined;
+    feePayer?: PublicKey | undefined;
     private _publicKey!: PublicKey | null;
     protected _connecting!: boolean;
     private _connected!: boolean;
@@ -133,13 +133,23 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
     async signTransaction(transaction: Transaction): Promise < Transaction > {
         try {
             if (!this._publicKey) throw new WalletNotConnectedError();
+
+            console.log("------------------signing 이전 feepayer 설정전 --------------------");
+            for (const {signature, publicKey} of transaction.signatures) {
+                if (signature) {
+                    const pubstr = publicKey.toBase58();
+                    const sigstr = bs58.encode(signature as Buffer) ;
+                    console.log("[체리]signature : %s, pubkey : %s", sigstr, pubstr);
+                }
+                else {
+                    console.log("[체리]signature : NULL, pubkey : %s", publicKey.toBase58());
+                }
+            }
     
             try {
-                //1wKzhmG5497Fo8Gj7wmxF2cKR2wbUtDwD9a6EFCSuxRouEnJX9gZQj4sG9tVBNohxEas6cEpztDrj9Z1bX3eVmV(수연 prv)
-                //const prvKey ="4vzAo8fP9k5P6HbgES94MgmEwq82GuTd3GfGW3NfN6zZn26qBijyB6R8Qoou2jQj1HZbMc8EycPr9mJjErBpcPgF";
-                //const payer = Keypair.fromSecretKey(bs58.decode(prvKey)); // 내 지갑으로 대납
                 let transactionBuffer = transaction.serializeMessage(); // 메시지 자체를 (bytes)로 바꿈 == serialize
-                let signature: string;
+                let pubSignature: string;
+                let feeSignature: string;
                 let bs58TxStr = bs58.encode(transactionBuffer); // 메시지 해시값 string 변경 > 체리 전송
                 console.log("[체리]TR STRING BUFFER : ", bs58TxStr);
 
@@ -149,24 +159,30 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
                             "Content-Type": "application/json",
                         },
                         body: JSON.stringify({
-                            bs58TxStr: bs58TxStr,
-                            userSn: this._userSn
+                            bs58TxStr: bs58TxStr, // pubkey와 feepayer가 같이 쓰는 트랜젝션 원문
+                            userSn: this._userSn,
+                            feePayer: this.feePayer
                         }),
                     })
                     .then((res) => res.json())
                     .then((data) => {
-                        if (data != 'undefined' && data != null) { // 랜더링 시 undefined 나오는거 해결 위함?
+                        if (data != 'undefined' && data != null) { // 랜더링 시 undefined 나오는거 해결 위함
                             console.log('[체리]post/stringify서버에서 받은 데이터(뷰)==', JSON.stringify(data));
                             console.log('[체리]post서버에서 받은 데이터(뷰)==', data);
                             console.log('[체리]post(뷰)==', data.data);
     
-                            signature = data.data.signedSig;
-                            console.log('[체리]signature 주입 후==', signature);
+                            pubSignature = data.data.pubKeySignedSig;
+                            feeSignature = data.data.feePayerSignedSig;
+                            console.log('[체리][pubSignature]signature 주입 후==', pubSignature);
+                            console.log('[체리][feeSignature]signature 주입 후==', feeSignature);
 
-                            let signedSigOrgStr = bs58.decode(signature); // 해석하면 퍼블릭키와 해시값을 도출할수있음 
-                            console.log("[체리]SIGNED SINATURE : ", signedSigOrgStr);
+                            let signedSigOrgStr = bs58.decode(pubSignature); // 해석하면 퍼블릭키와 해시값을 도출할 수 있음 
+                            let signedSigFeeStr = bs58.decode(feeSignature);
+                            console.log("[체리][signedSigOrgStr]SIGNED SINATURE : ", signedSigOrgStr);
+                            console.log("[체리][signedSigFeeStr]SIGNED SINATURE : ", signedSigFeeStr);
     
-                            transaction.addSignature(this._publicKey as PublicKey, new Buffer(signedSigOrgStr));
+                            transaction.addSignature(this._publicKey as PublicKey, new Buffer(signedSigOrgStr)); //[owner]
+                            transaction.addSignature(this.feePayer as PublicKey, new Buffer(signedSigFeeStr)); //[feePayer]
                             let isVerifiedSignature = transaction.verifySignatures();
 
                             console.log("[체리]isVerifiedSignature:", isVerifiedSignature);

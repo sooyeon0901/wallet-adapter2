@@ -90,18 +90,21 @@ describe('WalletProvider', () => {
         sendTransaction = jest.fn();
     }
     class FooWalletAdapter extends MockWalletAdapter {
+        feePayer?: PublicKey | undefined;
         name = 'FooWallet' as WalletName<'FooWallet'>;
         url = 'https://foowallet.com';
         icon = 'foo.png';
         publicKey = new PublicKey('Foo11111111111111111111111111111111111111111');
     }
     class BarWalletAdapter extends MockWalletAdapter {
+        feePayer?: PublicKey | undefined;
         name = 'BarWallet' as WalletName<'BarWallet'>;
         url = 'https://barwallet.com';
         icon = 'bar.png';
         publicKey = new PublicKey('Bar11111111111111111111111111111111111111111');
     }
     class BazWalletAdapter extends MockWalletAdapter {
+        feePayer?: PublicKey | undefined;
         name = 'BazWallet' as WalletName<'BazWallet'>;
         url = 'https://bazwallet.com';
         icon = 'baz.png';

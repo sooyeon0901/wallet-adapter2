@@ -29,6 +29,7 @@
         "deploy:example": "pnpm run example && gh-pages --dist packages/starter/example/out --dest example --dotfiles"
     },
     "devDependencies": {
+        "@types/node": "^15.12.4",
         "@typescript-eslint/eslint-plugin": "^5.32.0",
         "@typescript-eslint/parser": "^5.32.0",
         "eslint": "^8.20.0",

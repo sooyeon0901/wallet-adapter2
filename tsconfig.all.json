@@ -10,9 +10,9 @@
         {
             "path": "./packages/starter/create-react-app-starter/tsconfig.all.json"
         },
-        {
-            "path": "./packages/starter/example/tsconfig.all.json"
-        },
+        // {
+        //     "path": "./packages/starter/example/tsconfig.all.json"
+        // },
         {
             "path": "./packages/starter/material-ui-starter/tsconfig.all.json"
         },

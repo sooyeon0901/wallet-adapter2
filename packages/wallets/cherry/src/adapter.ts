@@ -146,13 +146,13 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
                 }
             }
     
-            try {
-                let transactionBuffer = transaction.serializeMessage(); // 메시지 자체를 (bytes)로 바꿈 == serialize
-                let pubSignature: string;
-                let feeSignature: string;
-                let bs58TxStr = bs58.encode(transactionBuffer); // 메시지 해시값 string 변경 > 체리 전송
-                console.log("[체리]TR STRING BUFFER : ", bs58TxStr);
+            let transactionBuffer = transaction.serializeMessage(); // 메시지 자체를 (bytes)로 바꿈 == serialize
+            let pubSignature: string;
+            let feeSignature: string;
+            let bs58TxStr = bs58.encode(transactionBuffer); // 메시지 해시값 string 변경 > 체리 전송
+            console.log("[체리]TR STRING BUFFER : ", bs58TxStr);
 
+            try {
                 await fetch(process.env.NEXT_PUBLIC_CHERRY_SIGN_LOCAL as string, { //(*1) URL
                         method: "POST",
                         headers: {
@@ -172,16 +172,49 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
                             console.log('[체리]post(뷰)==', data.data);
     
                             pubSignature = data.data.pubKeySignedSig;
-                            feeSignature = data.data.feePayerSignedSig;
                             console.log('[체리][pubSignature]signature 주입 후==', pubSignature);
-                            console.log('[체리][feeSignature]signature 주입 후==', feeSignature);
 
                             let signedSigOrgStr = bs58.decode(pubSignature); // 해석하면 퍼블릭키와 해시값을 도출할 수 있음 
-                            let signedSigFeeStr = bs58.decode(feeSignature);
                             console.log("[체리][signedSigOrgStr]SIGNED SINATURE : ", signedSigOrgStr);
-                            console.log("[체리][signedSigFeeStr]SIGNED SINATURE : ", signedSigFeeStr);
     
                             transaction.addSignature(this._publicKey as PublicKey, new Buffer(signedSigOrgStr)); //[owner]
+                            
+                            console.log("[체리]===transaction:", transaction);
+
+                            return transaction;
+                        }
+                    })
+                    .catch(err => {
+                        console.log(err)
+                    });
+
+                    transactionBuffer = transaction.serializeMessage(); // 메시지 자체를 (bytes)로 바꿈 == serialize
+                    bs58TxStr = bs58.encode(transactionBuffer);
+                    //feePayer
+                    await fetch(process.env.NEXT_PUBLIC_CHERRY_SIGN_LOCAL as string, { //(*1) URL
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            bs58TxStr: bs58TxStr, // pubkey와 feepayer가 같이 쓰는 트랜젝션 원문
+                            userSn: -1,
+                            feePayer: this.feePayer
+                        }),
+                    })
+                    .then((res) => res.json())
+                    .then((data) => {
+                        if (data != 'undefined' && data != null) { // 랜더링 시 undefined 나오는거 해결 위함
+                            console.log('[체리]post/stringify서버에서 받은 데이터(뷰)==', JSON.stringify(data));
+                            console.log('[체리]post서버에서 받은 데이터(뷰)==', data);
+                            console.log('[체리]post(뷰)==', data.data);
+    
+                            feeSignature = data.data.pubKeySignedSig;
+                            console.log('[체리][feeSignature]signature 주입 후==', feeSignature);
+
+                            let signedSigFeeStr = bs58.decode(feeSignature);
+                            console.log("[체리][signedSigFeeStr]SIGNED SINATURE : ", signedSigFeeStr);
+    
                             transaction.addSignature(this.feePayer as PublicKey, new Buffer(signedSigFeeStr)); //[feePayer]
                             let isVerifiedSignature = transaction.verifySignatures();
 
@@ -201,6 +234,9 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
             this.emit('error', error);
             throw error;
         }
+
+
+        
     
         return transaction;
     

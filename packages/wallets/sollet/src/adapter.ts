@@ -1,10 +1,12 @@
 import type { WalletName } from '@solana/wallet-adapter-base';
+import { PublicKey } from '@solana/web3.js';
 import type { SolletWalletAdapterConfig } from './base.js';
 import { BaseSolletWalletAdapter } from './base.js';
 
 export const SolletWalletName = 'Sollet' as WalletName<'Sollet'>;
 
 export class SolletWalletAdapter extends BaseSolletWalletAdapter {
+    feePayer?: PublicKey | undefined;
     name = SolletWalletName;
     url = 'https://www.sollet.io';
     icon =
@@ -18,6 +20,7 @@ export class SolletWalletAdapter extends BaseSolletWalletAdapter {
 export const SolletExtensionWalletName = 'Sollet (Extension)' as WalletName<'Sollet (Extension)'>;
 
 export class SolletExtensionWalletAdapter extends BaseSolletWalletAdapter {
+    feePayer?: PublicKey | undefined;
     name = SolletExtensionWalletName;
     url = 'https://chrome.google.com/webstore/detail/sollet/fhmfendgdocmcbmfikdcogofphimnkno';
     icon =

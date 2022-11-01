@@ -150,7 +150,7 @@ export const WalletModal: FC<WalletModalProps> = ({ className = '', container = 
                         </button>
                         {installedWallets.length ? (
                             <>
-                                <h1 className="wallet-adapter-modal-title">Connect a wallet on Solana to continue</h1>
+                                <h1 className="wallet-adapter-modal-title">계속하려면 Solana에 지갑을 연결하세요</h1>
                                 <ul className="wallet-adapter-modal-list">
                                     {installedWallets.map((wallet) => (
                                         <WalletListItem
@@ -180,7 +180,7 @@ export const WalletModal: FC<WalletModalProps> = ({ className = '', container = 
                                         onClick={handleCollapseClick}
                                         tabIndex={0}
                                     >
-                                        <span>{expanded ? 'Less ' : 'More '}options</span>
+                                        <span>지갑 {expanded ? '축소 ' : '확장 '}</span>
                                         <svg
                                             width="13"
                                             height="7"

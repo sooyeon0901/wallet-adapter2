@@ -5,7 +5,7 @@ import { PublicKey, Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { sign } from 'tweetnacl';
 
-export const CherryWalletName = 'Cherry Wallet' as WalletName<'Cherry Wallet'>;
+export const CherryWalletName = 'Cherry' as WalletName<'Cherry'>;
 
  //(*1) URL : 체리 로컬/개발/QA/운영 체크 필요
 export class CherryWalletAdapter extends BaseWalletAdapter {
@@ -15,6 +15,7 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
     private _connected!: boolean;
     //private _feePayer?: string;
     private _userSn?: number;
+    private _wallet: PublicKey | null | undefined;//alpha가 연동 안돼서 추가. 테스트 필요 
     //private _autoApprove = false;
 
     name = CherryWalletName;
@@ -23,10 +24,11 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
 
     constructor() {
         super();
+        this._connecting = false;
     }
 
     get connecting() {
-        return false;
+        return this._connecting;
     }
     get publicKey() {
         return this._publicKey;
@@ -48,16 +50,16 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
 
         try {
             var cherryAdres : string = "";
-            this._connecting = true;
             
             if (this.connected || this.connecting) { return };
+            this._connecting = true;
             
-            window.open(process.env.NEXT_PUBLIC_CHERRY_LOGIN_LOCAL, "_blank", 
+            window.open(process.env.NEXT_PUBLIC_CHERRY_LOGIN_PRD, "_blank", 
             "width=" + _width + ", height=" + _height + ", left=" + _left + ", top=" + _top + ", scrollbars=no, location=no");  //(*1) URL
 
             async function cherryReceivePage(e: any) {
-                if (e.origin == process.env.NEXT_PUBLIC_CHERRY_LOCAL) { //(*1) URL
-                    console.log('[체리] e======'+ e + ', e.data======' + e.data);
+                if (e.origin == process.env.NEXT_PUBLIC_CHERRY_PRD) { //(*1) URL
+                    //console.log('[체리] e======'+ e + ', e.data======' + e.data);
 
                     return e.data;
                 }
@@ -66,17 +68,17 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
                 let buffer: Buffer;
                 let bufferFee: Buffer;
                 let cherryData = await cherryReceivePage(e);
-                console.log('[체리] cherryData==', cherryData);
+                //console.log('[체리] cherryData==', cherryData);
 
                 if(cherryData) {
                     try {
                         cherryAdres = cherryData.publicKey;
                         this._userSn = cherryData.userSn;
-                        console.log('[체리]cherryAdres==' + cherryAdres + ', [체리]this._userSn==' + this._userSn);
+                        //console.log('[체리]cherryAdres==' + cherryAdres + ', [체리]this._userSn==' + this._userSn);
 
                         buffer = new PublicKey(cherryAdres).toBuffer(); 
                         bufferFee = new PublicKey(cherryData.feePayer).toBuffer(); 
-                        console.log('[체리]bufferFee==' + bufferFee + ', [체리]cherryData.feePayer==' + cherryData.feePayer);
+                        //console.log('[체리]bufferFee==' + bufferFee + ', [체리]cherryData.feePayer==' + cherryData.feePayer);
                     } catch (error: any) {
                         throw new WalletAccountError(error?.message, error);
                     }
@@ -89,7 +91,9 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
                         throw new WalletPublicKeyError(error?.message, error);
                     }
                     this._publicKey = publicKey;
+                    this._wallet = publicKey; //alpha가 연동 안돼서 추가. 테스트 필요 
                     this.emit('connect', this._publicKey);
+                    console.log('this._wallet===', this._wallet);//alpha가 연동 안돼서 추가. 테스트 필요 
                 }
             }, false);
             //this._connecting = false;
@@ -142,7 +146,7 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
             console.log("[체리]TR STRING BUFFER : ", bs58TxStr);
 
             try {
-                await fetch(process.env.NEXT_PUBLIC_CHERRY_SIGN_LOCAL as string, { //(*1) URL
+                await fetch(process.env.NEXT_PUBLIC_CHERRY_SIGN_PRD as string, { //(*1) URL
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
@@ -176,7 +180,7 @@ export class CherryWalletAdapter extends BaseWalletAdapter {
                     transactionBuffer = transaction.serializeMessage();
                     bs58TxStr = bs58.encode(transactionBuffer);
                     
-                    await fetch(process.env.NEXT_PUBLIC_CHERRY_SIGN_LOCAL as string, { //(*1) URL
+                    await fetch(process.env.NEXT_PUBLIC_CHERRY_SIGN_PRD as string, { //(*1) URL
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
